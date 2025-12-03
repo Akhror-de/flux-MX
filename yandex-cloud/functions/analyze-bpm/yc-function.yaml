@@ -1,0 +1,8 @@
+name: analyze-bpm
+runtime: nodejs16
+entrypoint: index.handler
+memory: 128MB
+execution_timeout: 10s
+service_account_id: ${SA_ID}
+environment:
+  NODE_ENV: production
