@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="ru" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#6a11cb">
+    <meta name="description" content="Flux AI Music Mixer — создавайте идеальные миксы с помощью искусственного интеллекта">
+    <title>Flux AI Music Mixer | Бесплатный PWA-микшер</title>
+    
+    <!-- PWA Meta -->
+    <link rel="manifest" href="/manifest.json" crossorigin="use-credentials">
+    <link rel="icon" href="/icons/icon-192.png" type="image/png">
+    <link rel="apple-touch-icon" href="/icons/icon-192.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Flux Mixer">
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="Flux AI Music Mixer">
+    <meta property="og:description" content="Создавайте идеальные музыкальные миксы с AI-помощником">
+    <meta property="og:image" content="/icons/icon-512.png">
+    <meta property="og:url" content="https://flux-mixer.vercel.app">
+    <meta property="og:type" content="website">
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="/style.css">
+    
+    <!-- AI Libraries (через CDN) -->
+    <script src="https://unpkg.com/tonal/browser/tonal.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/web-audio-beat-detector@7.0.2/dist/web-audio-beat-detector.umd.min.js"></script>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Уведомления -->
+    <div id="notification" class="notification" aria-live="polite" aria-atomic="true"></div>
+    
+    <!-- Главный контейнер -->
+    <div class="app-container">
+        <!-- Шапка -->
+        <header class="app-header">
+            <div class="logo">
+                <h1>🎛️ <span class="gradient-text">Flux</span></h1>
+                <p class="tagline">AI Music Mixer PWA</p>
+            </div>
+            
+            <div class="header-controls">
+                <button id="installBtn" class="btn btn-install" aria-label="Установить приложение">
+                    📱 Установить
+                </button>
+                <button id="themeToggle" class="btn btn-icon" aria-label="Переключить тему">
+                    🌙
+                </button>
+            </div>
+        </header>
+
+        <!-- Основной контент -->
+        <main class="main-content">
+            <!-- Панель загрузки -->
+            <section class="upload-section" aria-labelledby="upload-title">
+                <h2 id="upload-title" class="section-title">📁 Загрузите музыку</h2>
+                <div class="upload-zone" id="uploadZone">
+                    <input type="file" id="fileInput" accept="audio/*" multiple 
+                           class="visually-hidden">
+                    <label for="fileInput" class="upload-label">
+                        <div class="upload-icon">🎵</div>
+                        <p>Перетащите файлы сюда или кликните для выбора</p>
+                        <small>Поддерживаемые форматы: MP3, WAV, OGG, FLAC</small>
+                    </label>
+                    <div class="upload-progress" id="uploadProgress" hidden>
+                        <div class="progress-bar" id="progressBar"></div>
+                        <span id="progressText">Загрузка...</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Визуализатор -->
+            <section class="visualizer-section" aria-labelledby="visualizer-title">
+                <h2 id="visualizer-title" class="section-title">📊 Визуализатор</h2>
+                <div class="visualizer-container">
+                    <canvas id="visualizer" width="800" height="300" 
+                            aria-label="Визуализация аудио"></canvas>
+                </div>
+            </section>
+
+            <!-- AI Анализ -->
+            <section class="ai-section" aria-labelledby="ai-title">
+                <h2 id="ai-title" class="section-title">🧠 AI Анализ</h2>
+                <div class="ai-controls">
+                    <button id="analyzeBtn" class="btn btn-primary btn-ai" disabled>
+                        🔍 Анализировать все треки
+                    </button>
+                    <button id="autoMixBtn" class="btn btn-success btn-ai" disabled>
+                        🤖 Авто-микс (AI)
+                    </button>
+                    <div class="ai-stats" id="aiStats">
+                        <div class="stat">
+                            <span class="stat-label">Треки:</span>
+                            <span id="trackCount" class="stat-value">0</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-label">BPM:</span>
+                            <span id="avgBpm" class="stat-value">—</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-label">Ключ:</span>
+                            <span id="commonKey" class="stat-value">—</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Дорожки для микширования -->
+            <section class="tracks-section" aria-labelledby="tracks-title">
+                <h2 id="tracks-title" class="section-title">🎵 Треки для микширования</h2>
+                <div class="tracks-container" id="tracksContainer">
+                    <div class="empty-state" id="emptyState">
+                        <p>Загрузите аудиофайлы, чтобы начать микширование</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Основные контролы -->
+            <section class="controls-section" aria-labelledby="controls-title">
+                <h2 id="controls-title" class="section-title visually-hidden">Управление воспроизведением</h2>
+                <div class="player-controls">
+                    <button id="playBtn" class="btn btn-play" aria-label="Воспроизведение/пауза">
+                        ▶️
+                    </button>
+                    
+                    <div class="volume-control">
+                        <label for="volumeSlider" class="volume-label">🔊 Громкость</label>
+                        <input type="range" id="volumeSlider" min="0" max="100" value="70" 
+                               class="volume-slider" aria-label="Громкость">
+                        <span id="volumeValue" class="volume-value">70%</span>
+                    </div>
+                    
+                    <div class="time-control">
+                        <span id="currentTime">0:00</span>
+                        <input type="range" id="progressSlider" min="0" max="100" value="0" 
+                               class="progress-slider" aria-label="Прогресс трека">
+                        <span id="totalTime">0:00</span>
+                    </div>
+                    
+                    <button id="stopBtn" class="btn btn-stop" aria-label="Остановить">
+                        ⏹️
+                    </button>
+                </div>
+                
+                <div class="master-controls">
+                    <button id="clearBtn" class="btn btn-warning">
+                        🗑️ Очистить все
+                    </button>
+                    <button id="demoBtn" class="btn btn-info">
+                        🎧 Загрузить демо
+                    </button>
+                    <button id="recordBtn" class="btn btn-danger" disabled>
+                        ⏺️ Записать микс
+                    </button>
+                </div>
+            </section>
+        </main>
+
+        <!-- Подвал -->
+        <footer class="app-footer">
+            <div class="footer-content">
+                <p>© 2024 Flux AI Music Mixer | PWA приложение | 
+                   <a href="https://github.com/ваш-username/flux-pwa" target="_blank" rel="noopener">GitHub</a>
+                </p>
+                <div class="pwa-status">
+                    <span id="pwaStatus">PWA не установлено</span>
+                    <span id="offlineStatus" class="offline-indicator">⚫ Офлайн</span>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Модальное окно AI-анализа -->
+    <div id="analysisModal" class="modal" role="dialog" aria-labelledby="modalTitle" hidden>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">🧠 AI Анализ треков</h3>
+                <button id="closeModal" class="btn-close" aria-label="Закрыть">×</button>
+            </div>
+            <div class="modal-body">
+                <div id="analysisResults"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Скрипты -->
+    <script>
+        // Глобальные переменные для PWA
+        let deferredPrompt = null;
+        let isAppInstalled = false;
+        
+        // Проверка PWA
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            document.getElementById('installBtn').style.display = 'flex';
+            updatePWAStatus('Готово к установке');
+        });
+        
+        window.addEventListener('appinstalled', () => {
+            isAppInstalled = true;
+            deferredPrompt = null;
+            updatePWAStatus('Установлено как PWA');
+            showNotification('Flux успешно установлен!', 'success');
+        });
+        
+        // Проверка офлайн-статуса
+        window.addEventListener('online', () => {
+            document.getElementById('offlineStatus').style.display = 'none';
+        });
+        
+        window.addEventListener('offline', () => {
+            document.getElementById('offlineStatus').style.display = 'inline';
+        });
+        
+        // Service Worker регистрация
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/service-worker.js', {
+                scope: '/'
+            }).then(reg => {
+                console.log('Service Worker зарегистрирован:', reg);
+                updatePWAStatus('PWA готово');
+            }).catch(err => {
+                console.error('Ошибка Service Worker:', err);
+                updatePWAStatus('Ошибка PWA');
+            });
+        } else {
+            updatePWAStatus('PWA не поддерживается');
+        }
+        
+        // Вспомогательные функции
+        function updatePWAStatus(text) {
+            const status = document.getElementById('pwaStatus');
+            if (status) status.textContent = text;
+        }
+        
+        function showNotification(message, type = 'info') {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.className = `notification notification-${type}`;
+            notification.style.display = 'block';
+            
+            setTimeout(() => {
+                notification.style.display = 'none';
+            }, 3000);
+        }
+        
+        // Обработчики UI
+        document.getElementById('installBtn').addEventListener('click', async () => {
+            if (!deferredPrompt) return;
+            
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            
+            if (outcome === 'accepted') {
+                document.getElementById('installBtn').style.display = 'none';
+            }
+            
+            deferredPrompt = null;
+        });
+        
+        // Тема
+        document.getElementById('themeToggle').addEventListener('click', () => {
+            document.body.classList.toggle('dark-theme');
+            const isDark = document.body.classList.contains('dark-theme');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+        });
+        
+        // Загружаем сохранённую тему
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme === 'dark') {
+            document.body.classList.add('dark-theme');
+        }
+        
+        // Модальное окно
+        document.getElementById('closeModal').addEventListener('click', () => {
+            document.getElementById('analysisModal').setAttribute('hidden', 'true');
+        });
+    </script>
+    
+    <!-- Основной скрипт приложения -->
+    <script src="/app.js"></script>
+</body>
+</html>
