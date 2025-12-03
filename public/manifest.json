@@ -1,0 +1,84 @@
+{
+  "name": "Flux AI Music Mixer",
+  "short_name": "Flux",
+  "description": "AI-помощник для гармонического микширования музыки. Создавайте идеальные миксы с помощью искусственного интеллекта.",
+  "start_url": "/",
+  "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone"],
+  "orientation": "any",
+  "background_color": "#121212",
+  "theme_color": "#6a11cb",
+  "categories": ["music", "entertainment", "productivity"],
+  "lang": "ru-RU",
+  "dir": "ltr",
+  "scope": "/",
+  "id": "/",
+  
+  "icons": [
+    {
+      "src": "/icons/icon-72.png",
+      "sizes": "72x72",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-96.png",
+      "sizes": "96x96",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-128.png",
+      "sizes": "128x128",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-144.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  
+  "shortcuts": [
+    {
+      "name": "Новый микс",
+      "short_name": "Микс",
+      "description": "Создать новый AI-микс",
+      "url": "/?action=new-mix"
+    },
+    {
+      "name": "Библиотека",
+      "short_name": "Треки",
+      "description": "Моя музыкальная библиотека",
+      "url": "/?action=library"
+    }
+  ],
+  
+  "share_target": {
+    "action": "/?share",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "files": [
+        {
+          "name": "audio",
+          "accept": ["audio/*", ".mp3", ".wav", ".ogg", ".flac"]
+        }
+      ]
+    }
+  }
+}
