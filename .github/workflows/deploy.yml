@@ -1,0 +1,51 @@
+name: Deploy Flux
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy-vercel:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        
+    - name: Install Vercel CLI
+      run: npm install -g vercel
+      
+    - name: Deploy to Vercel
+      env:
+        VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+        VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      run: |
+        vercel --token $VERCEL_TOKEN --prod --yes --confirm
+        
+  deploy-yc-functions:
+    runs-on: ubuntu-latest
+    needs: deploy-vercel
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup Yandex Cloud CLI
+      run: |
+        curl -sSL https://storage.yandexcloud.net/yandexcloud-yc/install.sh | bash
+        yc version
+        
+    - name: Configure Yandex Cloud
+      env:
+        YC_TOKEN: ${{ secrets.YC_TOKEN }}
+        YC_CLOUD_ID: ${{ secrets.YC_CLOUD_ID }}
+        YC_FOLDER_ID: ${{ secrets.YC_FOLDER_ID }}
+      run: |
+        yc config set token $YC_TOKEN
+        yc config set cloud-id $YC_CLOUD_ID
+        yc config set folder-id $YC_FOLDER_ID
+        
+    - name: Deploy Cloud Functions
+      run: npm run deploy:yc-func
