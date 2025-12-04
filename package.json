@@ -1,0 +1,20 @@
+{
+  "name": "flux-pwa",
+  "version": "1.0.0",
+  "description": "AI Music Mixer PWA with harmonic transitions",
+  "type": "module",
+  "scripts": {
+    "dev": "live-server public --port=3000",
+    "deploy:vercel": "vercel --prod",
+    "deploy:yc-func": "cd yandex-cloud/functions/analyze-bpm && zip -r function.zip . && yc serverless function version create --function-name=analyze-bpm --runtime nodejs16 --entrypoint index.handler --memory 128m --execution-timeout 10s --source-path function.zip",
+    "terraform:init": "cd yandex-cloud/terraform && terraform init",
+    "terraform:plan": "cd yandex-cloud/terraform && terraform plan",
+    "terraform:apply": "cd yandex-cloud/terraform && terraform apply -auto-approve"
+  },
+  "devDependencies": {
+    "live-server": "^1.2.2"
+  },
+  "keywords": ["pwa", "audio", "music", "mixer", "ai"],
+  "author": "Flux Team",
+  "license": "MIT"
+}
