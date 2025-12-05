@@ -1,52 +1,65 @@
 {
-  "name": "Flux AI Music Mixer",
+  "name": "Flux Audio Analyzer",
   "short_name": "Flux",
-  "description": "AI-помощник для гармонического микширования музыки. Создавайте идеальные миксы с помощью искусственного интеллекта.",
+  "description": "AI-powered audio analysis for DJs and producers",
   "start_url": "/",
   "display": "standalone",
   "display_override": ["window-controls-overlay", "standalone"],
-  "orientation": "any",
-  "background_color": "#121212",
-  "theme_color": "#6a11cb",
-  "categories": ["music", "entertainment", "productivity"],
-  "lang": "ru-RU",
-  "dir": "ltr",
+  "orientation": "portrait",
   "scope": "/",
-  "id": "/",
+  "theme_color": "#667eea",
+  "background_color": "#0f172a",
+  "categories": ["music", "productivity", "utilities"],
+  "dir": "ltr",
+  "lang": "en",
+  "prefer_related_applications": false,
+  "id": "/?source=pwa",
   
   "icons": [
     {
-      "src": "/icons/icon-72.png",
+      "src": "icons/icon-72x72.png",
       "sizes": "72x72",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/icons/icon-96.png",
+      "src": "icons/icon-96x96.png",
       "sizes": "96x96",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/icons/icon-128.png",
+      "src": "icons/icon-128x128.png",
       "sizes": "128x128",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/icons/icon-144.png",
+      "src": "icons/icon-144x144.png",
       "sizes": "144x144",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/icons/icon-192.png",
+      "src": "icons/icon-152x152.png",
+      "sizes": "152x152",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-192x192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/icons/icon-512.png",
+      "src": "icons/icon-384x384.png",
+      "sizes": "384x384",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-512x512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
@@ -55,28 +68,59 @@
   
   "shortcuts": [
     {
-      "name": "Новый микс",
-      "short_name": "Микс",
-      "description": "Создать новый AI-микс",
-      "url": "/?action=new-mix"
+      "name": "Analyze Audio",
+      "short_name": "Analyze",
+      "description": "Analyze audio file or URL",
+      "url": "/?action=analyze",
+      "icons": [{ "src": "icons/icon-96x96.png", "sizes": "96x96" }]
     },
     {
-      "name": "Библиотека",
-      "short_name": "Треки",
-      "description": "Моя музыкальная библиотека",
-      "url": "/?action=library"
+      "name": "View History",
+      "short_name": "History",
+      "description": "View analysis history",
+      "url": "/?action=history",
+      "icons": [{ "src": "icons/icon-96x96.png", "sizes": "96x96" }]
+    }
+  ],
+  
+  "screenshots": [
+    {
+      "src": "screenshots/screenshot-1.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "platform": "wide",
+      "label": "Flux Analyzer Dashboard"
+    },
+    {
+      "src": "screenshots/screenshot-2.png",
+      "sizes": "750x1334",
+      "type": "image/png",
+      "platform": "narrow",
+      "label": "Mobile Analysis View"
+    }
+  ],
+  
+  "related_applications": [],
+  
+  "protocol_handlers": [
+    {
+      "protocol": "web+flux",
+      "url": "/analyze?url=%s"
     }
   ],
   
   "share_target": {
-    "action": "/?share",
+    "action": "/share",
     "method": "POST",
     "enctype": "multipart/form-data",
     "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url",
       "files": [
         {
           "name": "audio",
-          "accept": ["audio/*", ".mp3", ".wav", ".ogg", ".flac"]
+          "accept": ["audio/*", ".mp3", ".wav", ".m4a", ".flac"]
         }
       ]
     }
