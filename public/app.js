@@ -1,204 +1,671 @@
 /**
- * Flux Audio Engine - Production Version
- * AI Music Mixer with Harmonic Transitions
+ * Flux PWA Main Application
+ * Production entry point
  */
 
-'use strict';
-
-// ===== КОНСТАНТЫ И УТИЛИТЫ =====
-const SUPPORTED_FORMATS = ['audio/mpeg', 'audio/wav', 'audio/ogg', 'audio/flac', 'audio/x-flac'];
-const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB
-const CACHE_KEY = 'flux_tracks_cache';
-
-// Camelot Wheel для гармонического микширования
-const CAMELOT_WHEEL = {
-    '1A': { key: 'Abm', compatible: ['1A', '12A', '2A', '1B'] },
-    '1B': { key: 'B', compatible: ['1B', '12B', '2B', '1A'] },
-    '2A': { key: 'Ebm', compatible: ['2A', '1A', '3A', '2B'] },
-    '2B': { key: 'Gb', compatible: ['2B', '1B', '3B', '2A'] },
-    '3A': { key: 'Bbm', compatible: ['3A', '2A', '4A', '3B'] },
-    '3B': { key: 'Db', compatible: ['3B', '2B', '4B', '3A'] },
-    '4A': { key: 'Fm', compatible: ['4A', '3A', '5A', '4B'] },
-    '4B': { key: 'Ab', compatible: ['4B', '3B', '5B', '4A'] },
-    '5A': { key: 'Cm', compatible: ['5A', '4A', '6A', '5B'] },
-    '5B': { key: 'Eb', compatible: ['5B', '4B', '6B', '5A'] },
-    '6A': { key: 'Gm', compatible: ['6A', '5A', '7A', '6B'] },
-    '6B': { key: 'Bb', compatible: ['6B', '5B', '7B', '6A'] },
-    '7A': { key: 'Dm', compatible: ['7A', '6A', '8A', '7B'] },
-    '7B': { key: 'F', compatible: ['7B', '6B', '8B', '7A'] },
-    '8A': { key: 'Am', compatible: ['8A', '7A', '9A', '8B'] },
-    '8B': { key: 'C', compatible: ['8B', '7B', '9B', '8A'] },
-    '9A': { key: 'Em', compatible: ['9A', '8A', '10A', '9B'] },
-    '9B': { key: 'G', compatible: ['9B', '8B', '10B', '9A'] },
-    '10A': { key: 'Bm', compatible: ['10A', '9A', '11A', '10B'] },
-    '10B': { key: 'D', compatible: ['10B', '9B', '11B', '10A'] },
-    '11A': { key: 'Gbm', compatible: ['11A', '10A', '12A', '11B'] },
-    '11B': { key: 'A', compatible: ['11B', '10B', '12B', '11A'] },
-    '12A': { key: 'Dbm', compatible: ['12A', '11A', '1A', '12B'] },
-    '12B': { key: 'E', compatible: ['12B', '11B', '1B', '12A'] }
-};
-
-// ===== КЛАСС HARMONIC MIXER =====
-class HarmonicMixer {
-    createSequence(tracks) {
-        if (tracks.length < 2) return tracks;
+class FluxApp {
+    constructor() {
+        // Application state
+        this.state = {
+            isOnline: navigator.onLine,
+            isPWA: window.matchMedia('(display-mode: standalone)').matches || 
+                   window.navigator.standalone === true,
+            isInstalled: false,
+            deferredPrompt: null,
+            currentView: 'analyzer',
+            theme: 'dark',
+            settings: {},
+            analyticsConsent: null
+        };
         
-        // Сортируем по энергии
-        const sorted = [...tracks].sort((a, b) => {
-            const energyA = a.analysis?.energy || 0.5;
-            const energyB = b.analysis?.energy || 0.5;
-            return energyA - energyB;
+        // Services
+        this.config = window.FLUX_CONFIG;
+        this.api = window.fluxApi;
+        this.analyzer = null;
+        
+        // Initialize
+        this._init();
+    }
+
+    /**
+     * Initialize application
+     */
+    async _init() {
+        try {
+            console.log('🚀 Flux PWA initializing...');
+            
+            // 1. Load settings
+            await this._loadSettings();
+            
+            // 2. Setup PWA
+            this._setupPWA();
+            
+            // 3. Setup analytics
+            this._setupAnalytics();
+            
+            // 4. Setup network monitoring
+            this._setupNetwork();
+            
+            // 5. Initialize UI components
+            await this._setupUI();
+            
+            // 6. Check for updates
+            this._checkForUpdates();
+            
+            console.log('✅ Flux PWA initialized successfully');
+            
+            // Track initialization
+            this._trackEvent('app', 'initialized');
+            
+        } catch (error) {
+            console.error('❌ Application initialization failed:', error);
+            this._showFatalError(error);
+        }
+    }
+
+    /**
+     * Load application settings
+     */
+    async _loadSettings() {
+        try {
+            // Load saved settings
+            const savedSettings = localStorage.getItem(this.config.STORAGE_KEYS.SETTINGS);
+            if (savedSettings) {
+                this.state.settings = JSON.parse(savedSettings);
+            }
+            
+            // Load theme
+            const savedTheme = localStorage.getItem(this.config.STORAGE_KEYS.THEME);
+            if (savedTheme) {
+                this.state.theme = savedTheme;
+                this._applyTheme(savedTheme);
+            }
+            
+            // Load analytics consent
+            const savedConsent = localStorage.getItem(this.config.STORAGE_KEYS.ANALYTICS_CONSENT);
+            this.state.analyticsConsent = savedConsent === 'true';
+            
+            console.log('⚙️ Settings loaded');
+            
+        } catch (error) {
+            console.warn('Failed to load settings:', error);
+            // Use defaults
+            this.state.settings = { ...this.config.DEFAULTS };
+        }
+    }
+
+    /**
+     * Save application settings
+     */
+    _saveSettings() {
+        try {
+            localStorage.setItem(
+                this.config.STORAGE_KEYS.SETTINGS,
+                JSON.stringify(this.state.settings)
+            );
+        } catch (error) {
+            console.warn('Failed to save settings:', error);
+        }
+    }
+
+    /**
+     * Setup PWA features
+     */
+    _setupPWA() {
+        // Before install prompt
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            this.state.deferredPrompt = e;
+            this.state.isInstalled = false;
+            
+            console.log('📱 PWA install available');
+            
+            // Show install prompt after delay
+            if (this.config.FEATURES.PWA_INSTALL) {
+                setTimeout(() => {
+                    if (this.state.deferredPrompt && !this.state.isPWA) {
+                        this._showInstallPrompt();
+                    }
+                }, 10000); // Show after 10 seconds
+            }
         });
         
-        const sequence = [sorted[0]];
-        const remaining = sorted.slice(1);
-        
-        while (remaining.length > 0) {
-            const last = sequence[sequence.length - 1];
-            const bestMatch = this.findBestMatch(last, remaining);
+        // App installed
+        window.addEventListener('appinstalled', () => {
+            this.state.isInstalled = true;
+            this.state.deferredPrompt = null;
             
-            if (bestMatch) {
-                sequence.push(bestMatch.track);
-                remaining.splice(bestMatch.index, 1);
-            } else {
-                sequence.push(remaining.shift());
-            }
-        }
-        
-        return sequence;
-    }
-    
-    findBestMatch(currentTrack, candidates) {
-        let bestScore = -1;
-        let bestIndex = -1;
-        
-        const currentAnalysis = currentTrack.analysis || {};
-        
-        for (let i = 0; i < candidates.length; i++) {
-            const candidate = candidates[i];
-            const candidateAnalysis = candidate.analysis || {};
+            console.log('✅ PWA installed successfully');
+            this._hideInstallPrompt();
             
-            const score = this.calculateCompatibilityScore(currentAnalysis, candidateAnalysis);
-            
-            if (score > bestScore) {
-                bestScore = score;
-                bestIndex = i;
-            }
+            // Track installation
+            this._trackEvent('pwa', 'installed');
+        });
+        
+        // Install button handlers
+        document.getElementById('install-confirm')?.addEventListener('click', () => {
+            this._installPWA();
+        });
+        
+        document.getElementById('install-cancel')?.addEventListener('click', () => {
+            this._hideInstallPrompt();
+        });
+        
+        // Check if already installed
+        if (this.state.isPWA) {
+            console.log('📱 Running as PWA');
+            this.state.isInstalled = true;
         }
-        
-        if (bestIndex >= 0 && bestScore > 50) {
-            return {
-                track: candidates[bestIndex],
-                index: bestIndex,
-                score: bestScore
-            };
-        }
-        
-        return null;
     }
-    
-    calculateCompatibilityScore(analysisA, analysisB) {
-        let score = 0;
-        
-        // Совместимость по Camelot (40%)
-        const camelotMatch = analysisA.compatibleKeys?.includes(analysisB.camelot) || false;
-        score += camelotMatch ? 40 : 0;
-        
-        // Совместимость по BPM (30%)
-        const bpmA = analysisA.bpm || 120;
-        const bpmB = analysisB.bpm || 120;
-        const bpmDiff = Math.abs(bpmA - bpmB);
-        const bpmScore = Math.max(0, 30 - (bpmDiff * 0.3));
-        score += bpmScore;
-        
-        // Совместимость по энергии (20%)
-        const energyA = analysisA.energy || 0.5;
-        const energyB = analysisB.energy || 0.5;
-        const energyDiff = Math.abs(energyA - energyB);
-        const energyScore = Math.max(0, 20 - (energyDiff * 40));
-        score += energyScore;
-        
-        // Разница в громкости (10%)
-        const loudnessA = analysisA.loudness || -20;
-        const loudnessB = analysisB.loudness || -20;
-        const loudnessDiff = Math.abs(loudnessA - loudnessB);
-        const loudnessScore = Math.max(0, 10 - (loudnessDiff * 0.5));
-        score += loudnessScore;
-        
-        return Math.round(score);
-    }
-}
 
-// ===== КЛАСС FLUX AUDIO ENGINE =====
-class FluxAudioEngine {
-    constructor() {
-        this.audioContext = null;
-        this.masterGain = null;
-        this.analyser = null;
-        this.isPlaying = false;
-        this.currentTrackId = null;
-        this.startTime = 0;
-        this.pausedTime = 0;
-        this.tracks = new Map();
-        this.effects = new Map();
-        this.visualizer = null;
-        this.isInitialized = false;
-        this.audioQueue = [];
-        this.isProcessingQueue = false;
-        this.currentMix = null;
-        this.harmonicMixer = new HarmonicMixer();
-        
-        this.init();
+    /**
+     * Show install prompt
+     */
+    _showInstallPrompt() {
+        const prompt = document.getElementById('install-prompt');
+        if (prompt) {
+            prompt.classList.remove('hidden');
+            prompt.setAttribute('aria-hidden', 'false');
+            
+            // Track prompt shown
+            this._trackEvent('pwa', 'prompt_shown');
+        }
     }
-    
-    async init() {
+
+    /**
+     * Hide install prompt
+     */
+    _hideInstallPrompt() {
+        const prompt = document.getElementById('install-prompt');
+        if (prompt) {
+            prompt.classList.add('hidden');
+            prompt.setAttribute('aria-hidden', 'true');
+        }
+    }
+
+    /**
+     * Install PWA
+     */
+    async _installPWA() {
+        if (!this.state.deferredPrompt) {
+            this._showToast('Installation not available', 'warning');
+            return;
+        }
+        
         try {
-            // Инициализация AudioContext по клику
-            document.addEventListener('click', this.initializeAudioContext.bind(this), { once: true });
-            this.setupEventListeners();
-            this.isInitialized = true;
-            console.log('Flux Audio Engine инициализирован');
+            this.state.deferredPrompt.prompt();
+            const { outcome } = await this.state.deferredPrompt.userChoice;
+            
+            // Track installation outcome
+            this._trackEvent('pwa', `install_${outcome}`);
+            
+            this.state.deferredPrompt = null;
+            this._hideInstallPrompt();
+            
         } catch (error) {
-            console.error('Ошибка инициализации движка:', error);
-            this.showNotification('Ошибка инициализации аудио', 'error');
+            console.error('Installation failed:', error);
+            this._showToast('Installation failed', 'error');
         }
     }
-    
-    // ... (остальные методы класса из предыдущего ответа)
-    // Из-за ограничения длины оставляю структуру, полный код в отдельном файле
-}
 
-// ===== ИНИЦИАЛИЗАЦИЯ ПРИЛОЖЕНИЯ =====
-let fluxEngine = null;
-
-document.addEventListener('DOMContentLoaded', () => {
-    try {
-        fluxEngine = new FluxAudioEngine();
-        window.fluxEngine = fluxEngine;
+    /**
+     * Setup analytics
+     */
+    _setupAnalytics() {
+        if (!this.config.ANALYTICS.ENABLED) return;
         
-        console.log('Flux AI Mixer запущен и готов к работе!');
+        // Check for consent
+        if (this.state.analyticsConsent === null) {
+            // Show consent dialog (simplified)
+            setTimeout(() => {
+                if (confirm('Help improve Flux by sharing anonymous usage data?')) {
+                    this.state.analyticsConsent = true;
+                    localStorage.setItem(this.config.STORAGE_KEYS.ANALYTICS_CONSENT, 'true');
+                } else {
+                    this.state.analyticsConsent = false;
+                    localStorage.setItem(this.config.STORAGE_KEYS.ANALYTICS_CONSENT, 'false');
+                }
+            }, 2000);
+        }
+        
+        // Setup error tracking
+        if (this.config.ANALYTICS.TRACK_ERRORS && this.state.analyticsConsent) {
+            window.addEventListener('error', (e) => {
+                this._trackError(e.error || new Error(e.message));
+            });
+            
+            window.addEventListener('unhandledrejection', (e) => {
+                this._trackError(e.reason);
+            });
+        }
+    }
+
+    /**
+     * Setup network monitoring
+     */
+    _setupNetwork() {
+        // Network status
+        window.addEventListener('online', () => {
+            this.state.isOnline = true;
+            this._hideOfflineBanner();
+            this._showToast('Back online', 'success', 3000);
+            
+            console.log('🌐 Network: Online');
+        });
+        
+        window.addEventListener('offline', () => {
+            this.state.isOnline = false;
+            this._showOfflineBanner();
+            this._showToast('You are offline', 'warning', 5000);
+            
+            console.warn('🌐 Network: Offline');
+        });
+        
+        // Initial check
+        this._updateNetworkUI();
+    }
+
+    /**
+     * Show offline banner
+     */
+    _showOfflineBanner() {
+        const banner = document.getElementById('offline-banner');
+        if (banner) {
+            banner.classList.remove('hidden');
+            banner.setAttribute('aria-hidden', 'false');
+        }
+    }
+
+    /**
+     * Hide offline banner
+     */
+    _hideOfflineBanner() {
+        const banner = document.getElementById('offline-banner');
+        if (banner) {
+            banner.classList.add('hidden');
+            banner.setAttribute('aria-hidden', 'true');
+        }
+    }
+
+    /**
+     * Update network UI
+     */
+    _updateNetworkUI() {
+        if (!this.state.isOnline) {
+            this._showOfflineBanner();
+        }
+    }
+
+    /**
+     * Setup UI components
+     */
+    async _setupUI() {
+        // Initialize analyzer component
+        const container = document.getElementById('flux-analyzer-container');
+        if (container && window.FluxAnalyzerUI) {
+            try {
+                this.analyzer = new FluxAnalyzerUI('flux-analyzer-container', {
+                    config: this.config,
+                    apiService: this.api,
+                    theme: this.state.theme,
+                    enableHistory: true,
+                    enableSharing: true
+                });
+                
+                console.log('🎨 Analyzer UI initialized');
+                
+            } catch (error) {
+                console.error('Failed to initialize analyzer:', error);
+                this._showToast('Failed to initialize analyzer', 'error');
+            }
+        }
+        
+        // Setup debug panel
+        this._setupDebugPanel();
+        
+        // Apply theme
+        this._applyTheme(this.state.theme);
+    }
+
+    /**
+     * Setup debug panel
+     */
+    _setupDebugPanel() {
+        const debugClose = document.getElementById('debug-close');
+        if (debugClose) {
+            debugClose.addEventListener('click', () => {
+                document.getElementById('debug-panel').classList.add('hidden');
+            });
+        }
+        
+        // Update debug info periodically
+        if (this.config.env.isLocalhost) {
+            setInterval(() => this._updateDebugInfo(), 5000);
+        }
+    }
+
+    /**
+     * Update debug information
+     */
+    _updateDebugInfo() {
+        const debugOutput = document.getElementById('debug-output');
+        if (!debugOutput) return;
+        
+        const info = {
+            timestamp: new Date().toISOString(),
+            performance: {
+                memory: performance.memory ? {
+                    usedJSHeapSize: Math.round(performance.memory.usedJSHeapSize / 1024 / 1024) + 'MB',
+                    totalJSHeapSize: Math.round(performance.memory.totalJSHeapSize / 1024 / 1024) + 'MB'
+                } : 'N/A',
+                navigation: performance.getEntriesByType('navigation')[0]
+            },
+            appState: {
+                isOnline: this.state.isOnline,
+                isPWA: this.state.isPWA,
+                isInstalled: this.state.isInstalled,
+                theme: this.state.theme
+            },
+            apiMetrics: this.api?.getMetrics() || 'N/A',
+            cache: {
+                size: this.api?.cache?.size || 0
+            }
+        };
+        
+        debugOutput.textContent = JSON.stringify(info, null, 2);
+    }
+
+    /**
+     * Apply theme
+     */
+    _applyTheme(theme) {
+        this.state.theme = theme;
+        
+        // Update body class
+        document.body.classList.remove('theme-dark', 'theme-light');
+        document.body.classList.add(`theme-${theme}`);
+        
+        // Save to storage
+        localStorage.setItem(this.config.STORAGE_KEYS.THEME, theme);
+        
+        // Update analyzer if exists
+        if (this.analyzer) {
+            this.analyzer._applyTheme(theme);
+        }
+    }
+
+    /**
+     * Toggle theme
+     */
+    toggleTheme() {
+        const newTheme = this.state.theme === 'dark' ? 'light' : 'dark';
+        this._applyTheme(newTheme);
+        this._showToast(`Switched to ${newTheme} theme`, 'info');
+    }
+
+    /**
+     * Show toast notification
+     */
+    _showToast(message, type = 'info', duration = 5000) {
+        const container = document.getElementById('toast-container');
+        if (!container) return;
+        
+        const toast = document.createElement('div');
+        toast.className = `toast toast-${type}`;
+        toast.setAttribute('role', 'alert');
+        toast.setAttribute('aria-live', 'assertive');
+        
+        const icon = {
+            success: '✅',
+            error: '❌',
+            warning: '⚠️',
+            info: 'ℹ️'
+        }[type] || 'ℹ️';
+        
+        toast.innerHTML = `
+            <div class="toast-content">
+                <span class="toast-icon">${icon}</span>
+                <span class="toast-message">${message}</span>
+                <button class="toast-close" aria-label="Close notification">&times;</button>
+            </div>
+        `;
+        
+        container.appendChild(toast);
+        
+        // Animate in
+        setTimeout(() => toast.classList.add('show'), 10);
+        
+        // Close button
+        const closeBtn = toast.querySelector('.toast-close');
+        closeBtn.addEventListener('click', () => {
+            this._removeToast(toast);
+        });
+        
+        // Auto-remove
+        if (duration > 0) {
+            setTimeout(() => {
+                this._removeToast(toast);
+            }, duration);
+        }
+    }
+
+    /**
+     * Remove toast
+     */
+    _removeToast(toast) {
+        if (!toast) return;
+        
+        toast.classList.remove('show');
+        toast.classList.add('hiding');
         
         setTimeout(() => {
-            const notification = document.getElementById('notification');
-            if (notification) {
-                notification.textContent = '🎛️ Flux AI Mixer загружен! Загрузите треки для начала микширования.';
-                notification.className = 'notification notification-success';
-                notification.style.display = 'block';
-                
-                setTimeout(() => {
-                    notification.style.display = 'none';
-                }, 5000);
+            if (toast.parentNode) {
+                toast.parentNode.removeChild(toast);
             }
-        }, 1000);
+        }, 300);
+    }
+
+    /**
+     * Track event
+     */
+    _trackEvent(category, action, label = null) {
+        if (!this.config.ANALYTICS.ENABLED || !this.state.analyticsConsent) return;
         
-    } catch (error) {
-        console.error('Критическая ошибка при запуске:', error);
+        const event = {
+            category: this.config.ANALYTICS.CATEGORIES[category] || category,
+            action,
+            label,
+            timestamp: new Date().toISOString(),
+            sessionId: this.api?.sessionId,
+            version: this.config.getBuildInfo().version
+        };
         
-        const notification = document.getElementById('notification');
-        if (notification) {
-            notification.textContent = 'Ошибка запуска приложения. Пожалуйста, обновите страницу.';
-            notification.className = 'notification notification-error';
-            notification.style.display = 'block';
+        // In production, send to analytics service
+        // Example: Google Analytics, Yandex.Metrica, etc.
+        console.log('[Analytics]', event);
+        
+        // You can implement actual analytics here
+        // if (window.gtag) {
+        //     gtag('event', action, {
+        //         event_category: category,
+        //         event_label: label
+        //     });
+        // }
+    }
+
+    /**
+     * Track error
+     */
+    _trackError(error) {
+        if (!this.config.ANALYTICS.TRACK_ERRORS || !this.state.analyticsConsent) return;
+        
+        const errorData = {
+            message: error.message,
+            stack: error.stack,
+            timestamp: new Date().toISOString(),
+            url: window.location.href,
+            userAgent: navigator.userAgent,
+            sessionId: this.api?.sessionId
+        };
+        
+        console.error('[Error Tracking]', errorData);
+        
+        // Send to error tracking service (e.g., Sentry, Rollbar)
+        // Example: Sentry.captureException(error);
+    }
+
+    /**
+     * Check for updates
+     */
+    _checkForUpdates() {
+        // Check for service worker updates
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.ready.then(registration => {
+                registration.update();
+            });
+        }
+        
+        // Check for app updates (simplified)
+        const lastUpdateCheck = localStorage.getItem('flux_last_update_check');
+        const now = Date.now();
+        
+        if (!lastUpdateCheck || now - parseInt(lastUpdateCheck) > 24 * 60 * 60 * 1000) {
+            // Check once per day
+            localStorage.setItem('flux_last_update_check', now.toString());
+            
+            // In production, you might fetch a version manifest
+            // and compare with current version
         }
     }
-});
+
+    /**
+     * Show fatal error screen
+     */
+    _showFatalError(error) {
+        document.getElementById('app').innerHTML = `
+            <div class="error-screen">
+                <div class="error-content">
+                    <div class="error-icon">💥</div>
+                    <h2>Application Error</h2>
+                    <p>Failed to initialize Flux Analyzer</p>
+                    <div class="error-details">
+                        <code>${error.message}</code>
+                    </div>
+                    <div class="error-actions">
+                        <button onclick="window.fluxApp.reload()" class="btn btn-primary">
+                            Reload Application
+                        </button>
+                        <button onclick="window.fluxApp.reset()" class="btn btn-secondary">
+                            Reset Data
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    /**
+     * Public API
+     */
+    
+    // Reload application
+    reload() {
+        window.location.reload();
+    }
+    
+    // Reset application data
+    reset() {
+        if (confirm('Reset all application data? This cannot be undone.')) {
+            localStorage.clear();
+            sessionStorage.clear();
+            this.reload();
+        }
+    }
+    
+    // Get application state
+    getState() {
+        return { ...this.state };
+    }
+    
+    // Get API service
+    getApiService() {
+        return this.api;
+    }
+    
+    // Get analyzer component
+    getAnalyzer() {
+        return this.analyzer;
+    }
+    
+    // Show toast (public method)
+    showToast(message, type = 'info') {
+        this._showToast(message, type);
+    }
+    
+    // Destroy application
+    destroy() {
+        // Clean up analyzer
+        if (this.analyzer) {
+            this.analyzer.destroy();
+        }
+        
+        // Remove event listeners
+        window.removeEventListener('online', this._updateNetworkUI);
+        window.removeEventListener('offline', this._updateNetworkUI);
+        
+        console.log('🧹 Flux App destroyed');
+    }
+}
+
+// Initialize application
+let fluxAppInstance = null;
+
+function initFluxApp() {
+    if (!fluxAppInstance) {
+        try {
+            fluxAppInstance = new FluxApp();
+            window.fluxApp = fluxAppInstance;
+            
+            // Make available for debugging
+            if (window.FLUX_CONFIG?.env.isLocalhost) {
+                window.__fluxApp = fluxAppInstance;
+            }
+            
+            // Global helper functions
+            window.showFluxToast = (message, type) => {
+                fluxAppInstance.showToast(message, type);
+            };
+            
+            window.getFluxState = () => {
+                return fluxAppInstance.getState();
+            };
+            
+        } catch (error) {
+            console.error('Failed to initialize Flux App:', error);
+            
+            // Show error to user
+            document.body.innerHTML = `
+                <div style="padding: 20px; font-family: sans-serif; text-align: center; color: white; background: #0f172a;">
+                    <h2 style="color: #ff4757;">Application Error</h2>
+                    <p>${error.message}</p>
+                    <button onclick="location.reload()" style="padding: 10px 20px; margin-top: 20px;">
+                        Reload Application
+                    </button>
+                </div>
+            `;
+        }
+    }
+    return fluxAppInstance;
+}
+
+// Start application when DOM is ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initFluxApp);
+} else {
+    initFluxApp();
+}
+
+// Export for module systems
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = { FluxApp, initFluxApp };
+}
