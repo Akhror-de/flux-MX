@@ -2,8 +2,14 @@
   "name": "flux-pwa",
   "version": 2,
   "public": true,
-  "regions": ["fra1"],
   "builds": [
+    {
+      "src": "server.js",
+      "use": "@vercel/node",
+      "config": {
+        "runtime": "nodejs22.x"
+      }
+    },
     {
       "src": "public/**",
       "use": "@vercel/static"
@@ -11,23 +17,29 @@
   ],
   "routes": [
     {
-      "src": "/service-worker.js",
-      "headers": {
-        "Cache-Control": "no-cache, no-store, must-revalidate",
-        "Service-Worker-Allowed": "/"
-      }
+      "src": "/api/(.*)",
+      "dest": "/server.js",
+      "methods": ["GET", "POST", "OPTIONS"]
+    },
+    {
+      "src": "/health",
+      "dest": "/server.js",
+      "methods": ["GET"]
     },
     {
       "src": "/(.*\\.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot))",
       "headers": {
-        "Cache-Control": "public, max-age=31536000, immutable"
-      }
+        "cache-control": "public, max-age=31536000, immutable"
+      },
+      "dest": "/public/$1"
     },
     {
-      "src": "/(.*)",
+      "src": "/service-worker.js",
       "headers": {
-        "Cache-Control": "public, max-age=0, must-revalidate"
-      }
+        "cache-control": "no-cache, no-store, must-revalidate",
+        "service-worker-allowed": "/"
+      },
+      "dest": "/public/service-worker.js"
     },
     {
       "src": "/(.*)",
@@ -47,15 +59,46 @@
           "value": "DENY"
         },
         {
+          "key": "X-XSS-Protection",
+          "value": "1; mode=block"
+        },
+        {
           "key": "Referrer-Policy",
           "value": "strict-origin-when-cross-origin"
+        },
+        {
+          "key": "Permissions-Policy",
+          "value": "camera=(), microphone=(), geolocation=()"
+        },
+        {
+          "key": "Strict-Transport-Security",
+          "value": "max-age=31536000; includeSubDomains"
+        }
+      ]
+    },
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, no-store, must-revalidate"
         }
       ]
     }
   ],
+  "env": {
+    "NODE_ENV": "production",
+    "NODE_VERSION": "22.x"
+  },
+  "regions": ["fra1"],
+  "functions": {
+    "server.js": {
+      "memory": 1024,
+      "maxDuration": 10
+    }
+  },
   "github": {
     "enabled": true,
-    "autoAlias": true,
     "silent": true
   }
 }
