@@ -2,552 +2,230 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Flux Integration Test</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            min-height: 100vh;
-            padding: 20px;
-        }
-        
-        .container {
-            max-width: 1000px;
-            margin: 0 auto;
-        }
-        
-        .header {
-            text-align: center;
-            margin-bottom: 40px;
-            padding: 20px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 20px;
-            backdrop-filter: blur(10px);
-        }
-        
-        h1 {
-            font-size: 2.5rem;
-            margin-bottom: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 15px;
-        }
-        
-        .test-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 20px;
-            margin-bottom: 40px;
-        }
-        
-        .test-card {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 15px;
-            padding: 25px;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            transition: all 0.3s ease;
-        }
-        
-        .test-card:hover {
-            transform: translateY(-5px);
-            background: rgba(255, 255, 255, 0.15);
-            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
-        }
-        
-        .test-header {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-        
-        .test-icon {
-            font-size: 24px;
-            width: 50px;
-            height: 50px;
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .test-title {
-            font-size: 18px;
-            font-weight: 600;
-        }
-        
-        .test-desc {
-            font-size: 14px;
-            opacity: 0.8;
-            margin-bottom: 20px;
-        }
-        
-        .test-input {
-            width: 100%;
-            padding: 12px 15px;
-            border: 2px solid rgba(255, 255, 255, 0.2);
-            border-radius: 10px;
-            background: rgba(255, 255, 255, 0.9);
-            color: #333;
-            font-size: 14px;
-            margin-bottom: 15px;
-        }
-        
-        .test-input:focus {
-            outline: none;
-            border-color: #00d4ff;
-            background: white;
-        }
-        
-        .test-btn {
-            width: 100%;
-            padding: 14px;
-            background: linear-gradient(45deg, #00d4ff, #008cff);
-            border: none;
-            border-radius: 10px;
-            color: white;
-            font-weight: 600;
-            font-size: 14px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-        }
-        
-        .test-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(0, 132, 255, 0.3);
-        }
-        
-        .test-btn:disabled {
-            opacity: 0.7;
-            cursor: not-allowed;
-            transform: none;
-        }
-        
-        .test-result {
-            margin-top: 20px;
-            padding: 15px;
-            border-radius: 10px;
-            background: rgba(0, 0, 0, 0.2);
-            font-family: 'Monaco', 'Menlo', monospace;
-            font-size: 12px;
-            overflow-x: auto;
-            display: none;
-        }
-        
-        .test-success {
-            display: block;
-            border-left: 4px solid #00c853;
-        }
-        
-        .test-error {
-            display: block;
-            border-left: 4px solid #ff2d55;
-        }
-        
-        .api-status {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: rgba(255, 255, 255, 0.1);
-            padding: 10px 15px;
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            backdrop-filter: blur(10px);
-        }
-        
-        .status-indicator {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-        }
-        
-        .status-checking {
-            background: #ffaa00;
-            animation: pulse 1.5s infinite;
-        }
-        
-        .status-online {
-            background: #00c853;
-            box-shadow: 0 0 10px #00c853;
-        }
-        
-        .status-offline {
-            background: #ff2d55;
-        }
-        
-        .console {
-            background: rgba(0, 0, 0, 0.3);
-            border-radius: 10px;
-            padding: 20px;
-            margin-top: 30px;
-            font-family: 'Monaco', 'Menlo', monospace;
-            font-size: 12px;
-            max-height: 300px;
-            overflow-y: auto;
-        }
-        
-        .console-title {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 15px;
-            font-weight: 600;
-        }
-        
-        .log-entry {
-            padding: 5px 0;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        }
-        
-        .log-time {
-            color: #00d4ff;
-            margin-right: 10px;
-        }
-        
-        .log-success {
-            color: #00c853;
-        }
-        
-        .log-error {
-            color: #ff2d55;
-        }
-        
-        .log-info {
-            color: #0084ff;
-        }
-        
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>🧪 Flux Integration Test</h1>
-            <p>Test the connection between frontend and Yandex Cloud functions</p>
-        </div>
-        
-        <div class="api-status" id="api-status">
-            <div class="status-indicator status-checking" id="status-indicator"></div>
-            <span id="status-text">Checking API...</span>
-        </div>
-        
-        <div class="test-grid">
-            <!-- Test 1: API Health -->
-            <div class="test-card">
-                <div class="test-header">
-                    <div class="test-icon">🩺</div>
-                    <div class="test-title">API Health Check</div>
-                </div>
-                <div class="test-desc">
-                    Test if the Yandex Cloud function is reachable
-                </div>
-                <button class="test-btn" onclick="testHealth()" id="health-btn">
-                    <span>Run Health Check</span>
-                </button>
-                <div class="test-result" id="health-result"></div>
-            </div>
-            
-            <!-- Test 2: URL Analysis -->
-            <div class="test-card">
-                <div class="test-header">
-                    <div class="test-icon">🔗</div>
-                    <div class="test-title">URL Analysis Test</div>
-                </div>
-                <div class="test-desc">
-                    Analyze audio from a URL (Mixkit sample)
-                </div>
-                <input type="text" 
-                       class="test-input" 
-                       id="test-url"
-                       value="https://assets.mixkit.co/music/preview/mixkit-tech-house-vibes-130.mp3"
-                       placeholder="Enter audio URL">
-                <button class="test-btn" onclick="testAnalyze()" id="analyze-btn">
-                    <span>Analyze Audio</span>
-                </button>
-                <div class="test-result" id="analyze-result"></div>
-            </div>
-            
-            <!-- Test 3: Cache Test -->
-            <div class="test-card">
-                <div class="test-header">
-                    <div class="test-icon">💾</div>
-                    <div class="test-title">Cache Test</div>
-                </div>
-                <div class="test-desc">
-                    Test API service caching mechanism
-                </div>
-                <button class="test-btn" onclick="testCache()" id="cache-btn">
-                    <span>Test Cache</span>
-                </button>
-                <div class="test-result" id="cache-result"></div>
-            </div>
-            
-            <!-- Test 4: Recommendations -->
-            <div class="test-card">
-                <div class="test-header">
-                    <div class="test-icon">💡</div>
-                    <div class="test-title">Recommendations Test</div>
-                </div>
-                <div class="test-desc">
-                    Generate mixing recommendations
-                </div>
-                <button class="test-btn" onclick="testRecommendations()" id="rec-btn">
-                    <span>Get Recommendations</span>
-                </button>
-                <div class="test-result" id="recommendations-result"></div>
-            </div>
-        </div>
-        
-        <!-- Console -->
-        <div class="console">
-            <div class="console-title">
-                <span>📋 Test Console</span>
-            </div>
-            <div id="console-output"></div>
-        </div>
-    </div>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
-    <!-- Scripts -->
-    <script src="config.js"></script>
-    <script src="api-service.js"></script>
+    <!-- Primary Meta Tags -->
+    <title>Flux Audio Analyzer | AI-Powered BPM & Key Detection</title>
+    <meta name="description" content="Professional audio analysis tool for DJs and producers. Detect BPM, musical key, and get smart mixing recommendations instantly.">
+    <meta name="author" content="Flux AI">
+    <meta name="keywords" content="BPM detection, audio analyzer, DJ tool, music key, Camelot wheel, mixing assistant">
     
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://flux-pwa.vercel.app/">
+    <meta property="og:title" content="Flux Audio Analyzer | AI-Powered BPM & Key Detection">
+    <meta property="og:description" content="Professional audio analysis tool for DJs and producers">
+    <meta property="og:image" content="https://flux-pwa.vercel.app/icons/icon-512x512.png">
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://flux-pwa.vercel.app/">
+    <meta property="twitter:title" content="Flux Audio Analyzer">
+    <meta property="twitter:description" content="Professional audio analysis tool for DJs and producers">
+    <meta property="twitter:image" content="https://flux-pwa.vercel.app/icons/icon-512x512.png">
+    
+    <!-- PWA Configuration -->
+    <meta name="theme-color" content="#667eea">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Flux Analyzer">
+    
+    <!-- Favicon & Icons -->
+    <link rel="icon" href="icons/icon-192x192.png" type="image/png">
+    <link rel="apple-touch-icon" href="icons/icon-192x192.png">
+    <link rel="manifest" href="manifest.json" crossorigin="use-credentials">
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="style.css">
+    
+    <!-- Fonts (preloaded for performance) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Preload critical resources -->
+    <link rel="preload" href="config.js" as="script">
+    <link rel="preload" href="api-service.js" as="script">
+    <link rel="preload" href="components/analyzer-ui.js" as="script">
+    
+    <!-- Preconnect to APIs -->
+    <link rel="preconnect" href="https://functions.yandexcloud.net">
+    
+    <!-- Structured Data for SEO -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "Flux Audio Analyzer",
+        "description": "AI-powered audio analysis tool for DJs and music producers",
+        "url": "https://flux-pwa.vercel.app",
+        "applicationCategory": "MusicApplication",
+        "operatingSystem": "Any",
+        "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD"
+        }
+    }
+    </script>
+    
+    <!-- Performance Monitoring -->
     <script>
-        // Global variables
-        let api;
-        const consoleOutput = document.getElementById('console-output');
-        const startTime = new Date();
+        // Performance monitoring
+        window.__PERFORMANCE_START = Date.now();
         
-        // Initialize API service
-        document.addEventListener('DOMContentLoaded', () => {
-            try {
-                api = new FluxApiService();
-                log('🌐 Flux API Service initialized', 'info');
-                log(`Endpoints: ${JSON.stringify(api.config.ENDPOINTS)}`, 'info');
-                
-                // Initial health check
-                testHealth();
-                
-            } catch (error) {
-                log(`❌ Failed to initialize API: ${error.message}`, 'error');
-            }
+        // Error tracking
+        window.addEventListener('error', function(e) {
+            console.error('Application error:', {
+                message: e.message,
+                filename: e.filename,
+                lineno: e.lineno,
+                colno: e.colno,
+                error: e.error?.toString()
+            });
         });
         
-        // Log to console
-        function log(message, type = 'info') {
-            const time = new Date();
-            const timeStr = time.toLocaleTimeString();
-            const elapsed = Math.round((time - startTime) / 1000);
-            
-            const entry = document.createElement('div');
-            entry.className = 'log-entry';
-            
-            let colorClass = 'log-info';
-            if (type === 'success') colorClass = 'log-success';
-            if (type === 'error') colorClass = 'log-error';
-            
-            entry.innerHTML = `
-                <span class="log-time">[+${elapsed}s]</span>
-                <span class="${colorClass}">${message}</span>
-            `;
-            
-            consoleOutput.appendChild(entry);
-            consoleOutput.scrollTop = consoleOutput.scrollHeight;
-            
-            // Also log to browser console
-            console[type === 'error' ? 'error' : 'log'](message);
+        // Unhandled promise rejection
+        window.addEventListener('unhandledrejection', function(e) {
+            console.error('Unhandled promise rejection:', e.reason);
+        });
+    </script>
+</head>
+<body>
+    <!-- Loading State -->
+    <div id="loading-screen" class="loading-screen">
+        <div class="loading-content">
+            <div class="loading-logo">🎵</div>
+            <div class="loading-spinner"></div>
+            <div class="loading-text">Loading Flux Analyzer...</div>
+            <div class="loading-progress">
+                <div class="progress-bar"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main App Container -->
+    <div id="app" class="app-container hidden">
+        <!-- Flux Analyzer will be injected here -->
+        <div id="flux-analyzer-container"></div>
+        
+        <!-- Install Prompt (Auto-shows for PWA) -->
+        <div id="install-prompt" class="install-prompt hidden">
+            <div class="install-content">
+                <div class="install-icon">📱</div>
+                <div class="install-text">
+                    <h3>Install Flux App</h3>
+                    <p>Add to home screen for full experience</p>
+                </div>
+                <div class="install-actions">
+                    <button id="install-cancel" class="btn-secondary">Later</button>
+                    <button id="install-confirm" class="btn-primary">Install</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Offline Banner -->
+        <div id="offline-banner" class="offline-banner hidden">
+            <div class="offline-content">
+                <span class="offline-icon">📡</span>
+                <span class="offline-text">You're offline. Some features limited.</span>
+            </div>
+        </div>
+        
+        <!-- Toast Container -->
+        <div id="toast-container" class="toast-container"></div>
+        
+        <!-- Debug Panel (hidden in production) -->
+        <div id="debug-panel" class="debug-panel hidden">
+            <div class="debug-header">
+                <h4>Debug Info</h4>
+                <button id="debug-close" class="debug-close">&times;</button>
+            </div>
+            <div class="debug-content">
+                <pre id="debug-output"></pre>
+            </div>
+        </div>
+    </div>
+
+    <!-- Analytics Script (optional) -->
+    <!-- <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXX"></script> -->
+    
+    <!-- Application Scripts (loaded in order) -->
+    <script src="config.js"></script>
+    <script src="api-service.js"></script>
+    <script src="components/analyzer-ui.js"></script>
+    <script src="app.js"></script>
+
+    <!-- Service Worker Registration -->
+    <script>
+        // Register Service Worker for PWA features
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/service-worker.js', {
+                    scope: '/',
+                    updateViaCache: 'none'
+                })
+                .then(registration => {
+                    console.log('✅ Service Worker registered:', registration.scope);
+                    
+                    // Check for updates
+                    registration.addEventListener('updatefound', () => {
+                        console.log('🔄 Service Worker update found');
+                        const newWorker = registration.installing;
+                        newWorker.addEventListener('statechange', () => {
+                            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                // New content available
+                                if (confirm('New version available. Reload?')) {
+                                    window.location.reload();
+                                }
+                            }
+                        });
+                    });
+                })
+                .catch(error => {
+                    console.error('❌ Service Worker registration failed:', error);
+                });
+                
+                // Check for controller updates
+                navigator.serviceWorker.addEventListener('controllerchange', () => {
+                    console.log('🔄 Service Worker controller changed');
+                });
+            });
         }
         
-        // Update API status
-        function updateApiStatus(isHealthy) {
-            const indicator = document.getElementById('status-indicator');
-            const text = document.getElementById('status-text');
-            
-            indicator.className = `status-indicator ${isHealthy ? 'status-online' : 'status-offline'}`;
-            text.textContent = isHealthy ? 'API Online' : 'API Offline';
-        }
-        
-        // Test 1: Health Check
-        async function testHealth() {
-            const btn = document.getElementById('health-btn');
-            const result = document.getElementById('health-result');
-            
-            btn.disabled = true;
-            btn.innerHTML = '<span>Checking...</span>';
-            result.className = 'test-result';
-            
-            try {
-                log('🩺 Starting health check...', 'info');
+        // Hide loading screen when DOM is ready
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                const loadingScreen = document.getElementById('loading-screen');
+                const app = document.getElementById('app');
                 
-                const isHealthy = await api.config.healthCheck();
-                
-                if (isHealthy) {
-                    result.innerHTML = `<pre>✅ API is healthy and reachable</pre>`;
-                    result.className = 'test-result test-success';
-                    log('✅ Health check passed', 'success');
-                } else {
-                    result.innerHTML = `<pre>⚠️ API returned unhealthy status</pre>`;
-                    result.className = 'test-result test-error';
-                    log('⚠️ Health check returned unhealthy', 'error');
+                if (loadingScreen) {
+                    loadingScreen.style.opacity = '0';
+                    setTimeout(() => {
+                        loadingScreen.style.display = 'none';
+                        if (app) app.classList.remove('hidden');
+                    }, 300);
                 }
                 
-                updateApiStatus(isHealthy);
-                
-            } catch (error) {
-                result.innerHTML = `<pre>❌ Health check failed: ${error.message}</pre>`;
-                result.className = 'test-result test-error';
-                log(`❌ Health check failed: ${error.message}`, 'error');
-                updateApiStatus(false);
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = '<span>Run Health Check</span>';
-            }
-        }
+                // Log performance
+                const loadTime = Date.now() - window.__PERFORMANCE_START;
+                console.log(`🚀 App loaded in ${loadTime}ms`);
+            }, 800);
+        });
         
-        // Test 2: Analyze URL
-        async function testAnalyze() {
-            const btn = document.getElementById('analyze-btn');
-            const result = document.getElementById('analyze-result');
-            const url = document.getElementById('test-url').value;
-            
-            btn.disabled = true;
-            btn.innerHTML = '<span>Analyzing...</span>';
-            result.className = 'test-result';
-            
-            try {
-                log(`🔗 Starting analysis for: ${url.substring(0, 50)}...`, 'info');
-                
-                const analysis = await api.analyzeAudio(url);
-                
-                result.innerHTML = `<pre>✅ Analysis successful!\n\n${JSON.stringify(analysis, null, 2)}</pre>`;
-                result.className = 'test-result test-success';
-                
-                log(`✅ Analysis complete: ${analysis.bpm} BPM in ${analysis.key}`, 'success');
-                
-            } catch (error) {
-                result.innerHTML = `<pre>❌ Analysis failed: ${error.message}</pre>`;
-                result.className = 'test-result test-error';
-                log(`❌ Analysis failed: ${error.message}`, 'error');
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = '<span>Analyze Audio</span>';
-            }
-        }
-        
-        // Test 3: Cache Test
-        async function testCache() {
-            const btn = document.getElementById('cache-btn');
-            const result = document.getElementById('cache-result');
-            const url = 'https://assets.mixkit.co/music/preview/mixkit-deep-urban-623.mp3';
-            
-            btn.disabled = true;
-            btn.innerHTML = '<span>Testing...</span>';
-            result.className = 'test-result';
-            
-            try {
-                log('💾 Starting cache test...', 'info');
-                
-                // First request
-                log('Request 1: Uncached', 'info');
-                const start1 = Date.now();
-                const result1 = await api.analyzeAudio(url);
-                const time1 = Date.now() - start1;
-                
-                // Second request (should be cached)
-                log('Request 2: Should be cached', 'info');
-                const start2 = Date.now();
-                const result2 = await api.analyzeAudio(url);
-                const time2 = Date.now() - start2;
-                
-                // Check if cached
-                const history = api.getRequestHistory();
-                const cachedEntry = history.find(h => h.data.bpm === result1.bpm);
-                
-                result.innerHTML = `<pre>✅ Cache test successful!\n\n` +
-                    `First request: ${time1}ms\n` +
-                    `Second request: ${time2}ms\n` +
-                    `Cached: ${cachedEntry ? 'Yes' : 'No'}\n` +
-                    `Speed improvement: ${((time1 - time2) / time1 * 100).toFixed(0)}%\n` +
-                    `Cache entries: ${history.length}</pre>`;
-                result.className = 'test-result test-success';
-                
-                log(`✅ Cache test complete: ${time1}ms → ${time2}ms`, 'success');
-                
-            } catch (error) {
-                result.innerHTML = `<pre>❌ Cache test failed: ${error.message}</pre>`;
-                result.className = 'test-result test-error';
-                log(`❌ Cache test failed: ${error.message}`, 'error');
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = '<span>Test Cache</span>';
-            }
-        }
-        
-        // Test 4: Recommendations
-        async function testRecommendations() {
-            const btn = document.getElementById('rec-btn');
-            const result = document.getElementById('recommendations-result');
-            
-            btn.disabled = true;
-            btn.innerHTML = '<span>Generating...</span>';
-            result.className = 'test-result';
-            
-            try {
-                log('💡 Generating recommendations...', 'info');
-                
-                // First get analysis
-                const url = 'https://assets.mixkit.co/music/preview/mixkit-tech-house-vibes-130.mp3';
-                const analysis = await api.analyzeAudio(url);
-                
-                // Then get recommendations
-                const recommendations = await api.getRecommendations(analysis);
-                
-                const tipsHtml = recommendations.mixingTips?.map(tip => `• ${tip}`).join('\n') || 'No tips';
-                const tracksHtml = recommendations.compatibleTracks?.map(t => 
-                    `  - ${t.title} by ${t.artist} (${t.bpm} BPM, ${t.key})`
-                ).join('\n') || 'No tracks';
-                
-                result.innerHTML = `<pre>✅ Recommendations generated!\n\n` +
-                    `=== Mixing Tips ===\n${tipsHtml}\n\n` +
-                    `=== Compatible Tracks ===\n${tracksHtml}\n\n` +
-                    `Energy match: ${recommendations.energyMatch}\n` +
-                    `Next key: ${recommendations.suggestedNextKey}</pre>`;
-                result.className = 'test-result test-success';
-                
-                log(`✅ Recommendations generated with ${recommendations.mixingTips?.length || 0} tips`, 'success');
-                
-            } catch (error) {
-                result.innerHTML = `<pre>❌ Recommendations failed: ${error.message}</pre>`;
-                result.className = 'test-result test-error';
-                log(`❌ Recommendations failed: ${error.message}`, 'error');
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = '<span>Get Recommendations</span>';
-            }
-        }
-        
-        // Auto-run tests on load
-        setTimeout(() => {
-            log('🚀 Starting integration tests...', 'info');
-        }, 1000);
+        // Enable debug panel with triple click
+        let clickCount = 0;
+        let clickTimer;
+        document.addEventListener('click', () => {
+            clickCount++;
+            clearTimeout(clickTimer);
+            clickTimer = setTimeout(() => {
+                if (clickCount === 3) {
+                    document.getElementById('debug-panel').classList.toggle('hidden');
+                    clickCount = 0;
+                }
+            }, 500);
+        });
     </script>
 </body>
 </html>
