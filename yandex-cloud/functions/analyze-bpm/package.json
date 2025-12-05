@@ -1,8 +1,52 @@
 {
-  "name": "analyze-bpm",
-  "version": "1.0.0",
+  "name": "flux-analyze-bpm",
+  "version": "2.2.0",
+  "description": "Flux AI BPM & Key Analyzer for Yandex Cloud",
+  "type": "module",
   "main": "index.js",
+  "engines": {
+    "node": ">=22.0.0",
+    "npm": ">=10.0.0"
+  },
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js",
+    "test": "node --test",
+    "test:coverage": "node --test --experimental-test-coverage",
+    "lint": "eslint index.js",
+    "lint:fix": "eslint index.js --fix",
+    "deploy": "yc serverless function version create --function-name=analyze-bpm --runtime nodejs22 --entrypoint index.handler --memory 128m --execution-timeout 10s --source-path .",
+    "deploy:prod": "yc serverless function version create --function-name=analyze-bpm --runtime nodejs22 --entrypoint index.handler --memory 256m --execution-timeout 30s --source-path . --environment NODE_ENV=production",
+    "logs": "yc serverless function logs --name=analyze-bpm --since=1h",
+    "invoke": "yc serverless function invoke --name=analyze-bpm --payload '{\"audioUrl\":\"https://assets.mixkit.co/music/preview/mixkit-tech-house-vibes-130.mp3\"}'"
+  },
+  "keywords": [
+    "audio-analysis",
+    "bpm-detection",
+    "key-detection",
+    "yandex-cloud",
+    "serverless",
+    "nodejs-22"
+  ],
+  "author": "Flux AI Team",
+  "license": "MIT",
   "dependencies": {
-    "node-fetch": "^2.6.7"
+    "@types/node": "^20.5.0"
+  },
+  "devDependencies": {
+    "eslint": "^8.47.0",
+    "eslint-config-prettier": "^9.0.0"
+  },
+  "files": [
+    "index.js",
+    "package.json",
+    "README.md"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/flux-pwa"
+  },
+  "bugs": {
+    "url": "https://github.com/yourusername/flux-pwa/issues"
   }
 }
