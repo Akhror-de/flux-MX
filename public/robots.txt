@@ -1,0 +1,12 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /admin/
+
+Sitemap: https://flux-pwa.vercel.app/sitemap.xml
+
+# Crawl delay (requests per second)
+Crawl-delay: 1
+
+# Preferred host
+Host: https://flux-pwa.vercel.app
