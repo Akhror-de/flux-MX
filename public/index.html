@@ -2,229 +2,81 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
     <!-- Primary Meta Tags -->
-    <title>Flux Audio Analyzer | AI-Powered BPM & Key Detection</title>
-    <meta name="description" content="Professional audio analysis tool for DJs and producers. Detect BPM, musical key, and get smart mixing recommendations instantly.">
-    <meta name="author" content="Flux AI">
-    <meta name="keywords" content="BPM detection, audio analyzer, DJ tool, music key, Camelot wheel, mixing assistant">
+    <title>Flux Audio Analyzer - AI BPM & Key Detection</title>
+    <meta name="description" content="Free AI-powered audio analyzer. Detect BPM, musical key, energy, and loudness instantly. Works offline.">
     
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://flux-pwa.vercel.app/">
-    <meta property="og:title" content="Flux Audio Analyzer | AI-Powered BPM & Key Detection">
-    <meta property="og:description" content="Professional audio analysis tool for DJs and producers">
+    <meta property="og:title" content="Flux Audio Analyzer - AI BPM & Key Detection">
+    <meta property="og:description" content="Free AI-powered audio analyzer. Detect BPM, musical key, energy, and loudness instantly.">
     <meta property="og:image" content="https://flux-pwa.vercel.app/icons/icon-512x512.png">
     
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image">
     <meta property="twitter:url" content="https://flux-pwa.vercel.app/">
-    <meta property="twitter:title" content="Flux Audio Analyzer">
-    <meta property="twitter:description" content="Professional audio analysis tool for DJs and producers">
+    <meta property="twitter:title" content="Flux Audio Analyzer - AI BPM & Key Detection">
+    <meta property="twitter:description" content="Free AI-powered audio analyzer. Detect BPM, musical key, energy, and loudness instantly.">
     <meta property="twitter:image" content="https://flux-pwa.vercel.app/icons/icon-512x512.png">
     
-    <!-- PWA Configuration -->
+    <!-- PWA -->
+    <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#667eea">
+    <link rel="icon" href="/icons/icon-192x192.png">
+    <link rel="apple-touch-icon" href="/icons/icon-192x192.png">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Flux Analyzer">
-    
-    <!-- Favicon & Icons -->
-    <link rel="icon" href="icons/icon-192x192.png" type="image/png">
-    <link rel="apple-touch-icon" href="icons/icon-192x192.png">
-    <link rel="manifest" href="manifest.json" crossorigin="use-credentials">
     
     <!-- Styles -->
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="/style.css">
     
-    <!-- Fonts (preloaded for performance) -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    
-    <!-- Preload critical resources -->
-    <link rel="preload" href="config.js" as="script">
-    <link rel="preload" href="api-service.js" as="script">
-    <link rel="preload" href="components/analyzer-ui.js" as="script">
-    
-    <!-- Preconnect to APIs -->
-    <link rel="preconnect" href="https://functions.yandexcloud.net">
-    
-    <!-- Structured Data for SEO -->
-    <script type="application/ld+json">
-    {
-        "@context": "https://schema.org",
-        "@type": "WebApplication",
-        "name": "Flux Audio Analyzer",
-        "description": "AI-powered audio analysis tool for DJs and music producers",
-        "url": "https://flux-pwa.vercel.app",
-        "applicationCategory": "MusicApplication",
-        "operatingSystem": "Any",
-        "offers": {
-            "@type": "Offer",
-            "price": "0",
-            "priceCurrency": "USD"
-        }
-    }
-    </script>
-    
-    <!-- Performance Monitoring -->
-    <script>
-        // Performance monitoring
-        window.__PERFORMANCE_START = Date.now();
-        
-        // Error tracking
-        window.addEventListener('error', function(e) {
-            console.error('Application error:', {
-                message: e.message,
-                filename: e.filename,
-                lineno: e.lineno,
-                colno: e.colno,
-                error: e.error?.toString()
-            });
-        });
-        
-        // Unhandled promise rejection
-        window.addEventListener('unhandledrejection', function(e) {
-            console.error('Unhandled promise rejection:', e.reason);
-        });
-    </script>
+    <!-- Preload critical assets -->
+    <link rel="preload" href="/app.js" as="script">
+    <link rel="preload" href="/api-service.js" as="script">
 </head>
 <body>
-    <!-- Loading State -->
-    <div id="loading-screen" class="loading-screen">
-        <div class="loading-content">
-            <div class="loading-logo">🎵</div>
-            <div class="loading-spinner"></div>
-            <div class="loading-text">Loading Flux Analyzer...</div>
-            <div class="loading-progress">
-                <div class="progress-bar"></div>
-            </div>
+    <div id="app">
+        <!-- App will be rendered here by JavaScript -->
+        <div style="text-align: center; padding: 100px 20px;">
+            <div class="spinner"></div>
+            <p style="margin-top: 20px;">Loading Flux Audio Analyzer...</p>
         </div>
     </div>
 
-    <!-- Main App Container -->
-    <div id="app" class="app-container hidden">
-        <!-- Flux Analyzer will be injected here -->
-        <div id="flux-analyzer-container"></div>
-        
-        <!-- Install Prompt (Auto-shows for PWA) -->
-        <div id="install-prompt" class="install-prompt hidden">
-            <div class="install-content">
-                <div class="install-icon">📱</div>
-                <div class="install-text">
-                    <h3>Install Flux App</h3>
-                    <p>Add to home screen for full experience</p>
-                </div>
-                <div class="install-actions">
-                    <button id="install-cancel" class="btn-secondary">Later</button>
-                    <button id="install-confirm" class="btn-primary">Install</button>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Offline Banner -->
-        <div id="offline-banner" class="offline-banner hidden">
-            <div class="offline-content">
-                <span class="offline-icon">📡</span>
-                <span class="offline-text">You're offline. Some features limited.</span>
-            </div>
-        </div>
-        
-        <!-- Toast Container -->
-        <div id="toast-container" class="toast-container"></div>
-        
-        <!-- Debug Panel (hidden in production) -->
-        <div id="debug-panel" class="debug-panel hidden">
-            <div class="debug-header">
-                <h4>Debug Info</h4>
-                <button id="debug-close" class="debug-close">&times;</button>
-            </div>
-            <div class="debug-content">
-                <pre id="debug-output"></pre>
-            </div>
-        </div>
-    </div>
-
-    <!-- Analytics Script (optional) -->
-    <!-- <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXX"></script> -->
+    <!-- Configuration -->
+    <script src="/config.js"></script>
     
-    <!-- Application Scripts (loaded in order) -->
-    <script src="config.js"></script>
-    <script src="api-service.js"></script>
-    <script src="components/analyzer-ui.js"></script>
-    <script src="app.js"></script>
+    <!-- Services -->
+    <script src="/api-service.js"></script>
+    
+    <!-- Components -->
+    <script src="/components/analyzer-ui.js"></script>
+    
+    <!-- Main App -->
+    <script src="/app.js"></script>
 
     <!-- Service Worker Registration -->
     <script>
-        // Register Service Worker for PWA features
+        // Progressive Enhancement
         if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/service-worker.js', {
-                    scope: '/',
-                    updateViaCache: 'none'
-                })
-                .then(registration => {
-                    console.log('✅ Service Worker registered:', registration.scope);
-                    
-                    // Check for updates
-                    registration.addEventListener('updatefound', () => {
-                        console.log('🔄 Service Worker update found');
-                        const newWorker = registration.installing;
-                        newWorker.addEventListener('statechange', () => {
-                            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                                // New content available
-                                if (confirm('New version available. Reload?')) {
-                                    window.location.reload();
-                                }
-                            }
-                        });
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('/service-worker.js')
+                    .then(function(registration) {
+                        console.log('ServiceWorker registration successful');
+                    }, function(err) {
+                        console.log('ServiceWorker registration failed: ', err);
                     });
-                })
-                .catch(error => {
-                    console.error('❌ Service Worker registration failed:', error);
-                });
-                
-                // Check for controller updates
-                navigator.serviceWorker.addEventListener('controllerchange', () => {
-                    console.log('🔄 Service Worker controller changed');
-                });
             });
         }
         
-        // Hide loading screen when DOM is ready
-        document.addEventListener('DOMContentLoaded', () => {
-            setTimeout(() => {
-                const loadingScreen = document.getElementById('loading-screen');
-                const app = document.getElementById('app');
-                
-                if (loadingScreen) {
-                    loadingScreen.style.opacity = '0';
-                    setTimeout(() => {
-                        loadingScreen.style.display = 'none';
-                        if (app) app.classList.remove('hidden');
-                    }, 300);
-                }
-                
-                // Log performance
-                const loadTime = Date.now() - window.__PERFORMANCE_START;
-                console.log(`🚀 App loaded in ${loadTime}ms`);
-            }, 800);
-        });
-        
-        // Enable debug panel with triple click
-        let clickCount = 0;
-        let clickTimer;
-        document.addEventListener('click', () => {
-            clickCount++;
-            clearTimeout(clickTimer);
-            clickTimer = setTimeout(() => {
-                if (clickCount === 3) {
-                    document.getElementById('debug-panel').classList.toggle('hidden');
-                    clickCount = 0;
-                }
-            }, 500);
+        // Add to homescreen prompt
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
         });
     </script>
 </body>
